@@ -24,3 +24,26 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
         }
       shell: powershell
+
+    # Cache Maven dependencies
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: C:\Users\runneradmin\.m2\repository  # Adjust this path according to your runner setup
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-maven-
+
+    # Build with Maven
+    - name: Build with Maven
+      run: mvn clean install
+      shell: cmd
+
+    # Display Java version
+    - name: Display Java version
+      run: java -version
+      shell: cmd
+
+    # Display Maven version
+    - name: Display Maven version
+      run: mvn -version
+      shell: cmd
