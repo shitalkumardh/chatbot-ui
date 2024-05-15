@@ -1,0 +1,30 @@
+name: Java Maven Build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: self-hosted  # Specify that this job runs on a self-hosted runner
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    # Cache Maven dependencies
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: C:\Users\runneradmin\.m2\repository  # Adjust this path according to your runner setup
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-maven-
+
+    # Build with Maven
+    - name: Build with Maven
+      run: mvn clean install
+
+    # Display Java version
+    - name: Display Java version
+      run: java -version
+
+    # Display Maven version
+    - name: Display Maven version
+      run: mvn -version
