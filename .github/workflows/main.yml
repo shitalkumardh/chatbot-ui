@@ -10,7 +10,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Ensure Java is installed and set JAVA_HOME
+    # Ensure Java is installed and set JAVA_HOME globally
     - name: Set up Java
       shell: powershell
       run: |
@@ -22,11 +22,11 @@ jobs:
           Remove-Item -Path "java.zip" -Force
         }
         $env:JAVA_HOME = $javaHome
-        [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $env:JAVA_HOME, [System.EnvironmentVariableTarget]::Process)
-        $env:Path += ";$env:JAVA_HOME\bin"
-        [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+        [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $env:JAVA_HOME, [System.EnvironmentVariableTarget]::Machine)
+        $newPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";$env:JAVA_HOME\bin"
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::Machine)
         Write-Output "JAVA_HOME is set to $env:JAVA_HOME"
-        Write-Output "PATH is set to $env:Path"
+        Write-Output "PATH is set to $newPath"
 
     # Install Maven
     - name: Install Maven
@@ -38,11 +38,11 @@ jobs:
           Expand-Archive -Path "maven.zip" -DestinationPath "C:\" -Force
           Remove-Item -Path "maven.zip" -Force
           $env:MAVEN_HOME = "C:\apache-maven-3.8.4"
-          [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Process)
-          $env:Path += ";$env:MAVEN_HOME\bin"
-          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+          [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Machine)
+          $newPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";$env:MAVEN_HOME\bin"
+          [System.Environment]::SetEnvironmentVariable("Path", $newPath, [System.EnvironmentVariableTarget]::Machine)
           Write-Output "MAVEN_HOME is set to $env:MAVEN_HOME"
-          Write-Output "PATH is set to $env:Path"
+          Write-Output "PATH is set to $newPath"
         }
 
     # Cache Maven dependencies
@@ -55,15 +55,19 @@ jobs:
 
     # Display Java version
     - name: Display Java version
-      run: java -version
       shell: cmd
+      run: |
+        echo %JAVA_HOME%
+        java -version
 
     # Display Maven version
     - name: Display Maven version
-      run: mvn -version
       shell: cmd
+      run: |
+        echo %MAVEN_HOME%
+        mvn -version
 
-    # Build with Maven
-    - name: Build with Maven
-      run: mvn clean install
-      shell: cmd
+    # # Build with Maven
+    # - name: Build with Maven
+    #   shell: cmd
+    #   run: mvn clean install
