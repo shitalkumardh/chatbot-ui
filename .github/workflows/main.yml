@@ -12,6 +12,7 @@ jobs:
 
     # Ensure Java is installed and set JAVA_HOME
     - name: Set up Java
+      shell: powershell
       run: |
         $ErrorActionPreference = 'Stop'
         $javaHome = "C:\Program Files\AdoptOpenJDK\jdk-11.0.11.9-hotspot"
@@ -24,10 +25,12 @@ jobs:
         [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $env:JAVA_HOME, [System.EnvironmentVariableTarget]::Process)
         $env:Path += ";$env:JAVA_HOME\bin"
         [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
-      shell: pwsh
+        Write-Output "JAVA_HOME is set to $env:JAVA_HOME"
+        Write-Output "PATH is set to $env:Path"
 
     # Install Maven
     - name: Install Maven
+      shell: powershell
       run: |
         $ErrorActionPreference = 'Stop'
         if (-Not (Get-Command mvn -ErrorAction SilentlyContinue)) {
@@ -38,8 +41,9 @@ jobs:
           [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Process)
           $env:Path += ";$env:MAVEN_HOME\bin"
           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Process)
+          Write-Output "MAVEN_HOME is set to $env:MAVEN_HOME"
+          Write-Output "PATH is set to $env:Path"
         }
-      shell: pwsh
 
     # Cache Maven dependencies
     - name: Cache Maven packages
@@ -63,67 +67,3 @@ jobs:
     # - name: Build with Maven
     #   run: mvn clean install
     #   shell: cmd
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# name: Java Maven Build
-
-# on: [push, pull_request]
-
-# jobs:
-#   build:
-#     runs-on: self-hosted  # Specify that this job runs on a self-hosted runner
-
-#     steps:
-#     - name: Checkout repository
-#       uses: actions/checkout@v2
-
-#     # Install Maven
-#     - name: Install Maven
-#       run: |
-#         $ErrorActionPreference = 'Stop'
-#         if (-Not (Get-Command mvn -ErrorAction SilentlyContinue)) {
-#           Invoke-WebRequest -Uri "https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.zip" -OutFile "maven.zip"
-#           Expand-Archive -Path "maven.zip" -DestinationPath "C:\apache-maven-3.8.4" -Force
-#           Remove-Item -Path "maven.zip" -Force
-#           $env:MAVEN_HOME = "C:\apache-maven-3.8.4"
-#           [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Machine)
-#           $env:Path += ";$env:MAVEN_HOME\bin"
-#           [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
-#         }
-#       shell: powershell
-
-#     # Cache Maven dependencies
-#     - name: Cache Maven packages
-#       uses: actions/cache@v3
-#       with:
-#         path: C:\Users\runneradmin\.m2\repository  # Adjust this path according to your runner setup
-#         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-#         restore-keys: ${{ runner.os }}-maven-
-
-#     # # Build with Maven
-#     # - name: Build with Maven
-#     #   run: mvn clean install
-#     #   shell: cmd
-
-#     # Display Java version
-#     - name: Display Java version
-#       run: java -version
-#       shell: cmd
-
-#     # Display Maven version
-#     - name: Display Maven version
-#       run: mvn -version
-#       shell: cmd
