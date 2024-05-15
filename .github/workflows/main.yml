@@ -5,26 +5,22 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: self-hosted  # Specify that this job runs on a self-hosted runner
+
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Cache Maven dependencies
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: C:\Users\runneradmin\.m2\repository  # Adjust this path according to your runner setup
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-maven-
-
-    # Build with Maven
-    - name: Build with Maven
-      run: mvn clean install
-
-    # Display Java version
-    - name: Display Java version
-      run: java -version
-
-    # Display Maven version
-    - name: Display Maven version
-      run: mvn -version
+    # Install Maven
+    - name: Install Maven
+      run: |
+        $ErrorActionPreference = 'Stop'
+        if (-Not (Get-Command mvn -ErrorAction SilentlyContinue)) {
+          Invoke-WebRequest -Uri "https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.zip" -OutFile "maven.zip"
+          Expand-Archive -Path "maven.zip" -DestinationPath "C:\"
+          Remove-Item -Path "maven.zip" -Force
+          $env:MAVEN_HOME = "C:\apache-maven-3.8.4"
+          [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Machine)
+          $env:Path += ";$env:MAVEN_HOME\bin"
+          [System.Environment]::SetEnvironmentVariable("Path", $env:Path, [System.EnvironmentVariableTarget]::Machine)
+        }
+      shell: powershell
