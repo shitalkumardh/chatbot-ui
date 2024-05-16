@@ -1,74 +1,36 @@
-name: Java Maven Build
+name: Backup Folder to Remote Server
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main  # Adjust as needed
 
 jobs:
-  build:
-    runs-on: self-hosted  # Specify that this job runs on a self-hosted runner
+  backup:
+    runs-on: self-hosted  # Specify the runner where the folder to be copied exists
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    # Set up Java and Maven in a single PowerShell step and make the variables available globally
-    - name: Set up Java and Maven
-      shell: powershell
+    - name: Set up SSH key
       run: |
-        $ErrorActionPreference = 'Stop'
-
-        # Install Java
-        $javaHome = "C:\Program Files\AdoptOpenJDK\jdk-11.0.11.9-hotspot"
-        if (-Not (Test-Path $javaHome)) {
-          Invoke-WebRequest -Uri "https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.11+9/OpenJDK11U-jdk_x64_windows_11.0.11_9.zip" -OutFile "java.zip"
-          Expand-Archive -Path "java.zip" -DestinationPath "C:\Program Files\AdoptOpenJDK" -Force
-          Remove-Item -Path "java.zip" -Force
+        $key = "${{ secrets.SSH_PRIVATE_KEY }}"
+        $keyPath = "$env:USERPROFILE\.ssh\id_rsa"
+        if (-not (Test-Path "$env:USERPROFILE\.ssh")) {
+          New-Item -ItemType Directory -Path "$env:USERPROFILE\.ssh"
         }
-        [System.Environment]::SetEnvironmentVariable("JAVA_HOME", $javaHome, [System.EnvironmentVariableTarget]::Machine)
-        $newJavaPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";$javaHome\bin"
-        [System.Environment]::SetEnvironmentVariable("Path", $newJavaPath, [System.EnvironmentVariableTarget]::Machine)
+        $key | Out-File -FilePath $keyPath -Encoding ascii
+        icacls $keyPath /inheritance:r /grant:r $env:USERNAME:F
+        Start-Process "ssh-add" $keyPath -NoNewWindow -Wait
 
-        # Install Maven
-        if (-Not (Get-Command mvn -ErrorAction SilentlyContinue)) {
-          Invoke-WebRequest -Uri "https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.zip" -OutFile "maven.zip"
-          Expand-Archive -Path "maven.zip" -DestinationPath "C:\" -Force
-          Remove-Item -Path "maven.zip" -Force
-          $env:MAVEN_HOME = "C:\apache-maven-3.8.4"
-          [System.Environment]::SetEnvironmentVariable("MAVEN_HOME", $env:MAVEN_HOME, [System.EnvironmentVariableTarget]::Machine)
-          $newMavenPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine) + ";$env:MAVEN_HOME\bin"
-          [System.Environment]::SetEnvironmentVariable("Path", $newMavenPath, [System.EnvironmentVariableTarget]::Machine)
-        }
-
-        # Export environment variables for subsequent steps
-        echo "JAVA_HOME=$javaHome" >> $env:GITHUB_ENV
-        echo "MAVEN_HOME=$env:MAVEN_HOME" >> $env:GITHUB_ENV
-        echo "PATH=$newJavaPath;$newMavenPath" >> $env:GITHUB_ENV
-        Write-Output "JAVA_HOME is set to $javaHome"
-        Write-Output "MAVEN_HOME is set to $env:MAVEN_HOME"
-        Write-Output "PATH is set to $newJavaPath;$newMavenPath"
-
-    # Cache Maven dependencies
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: C:\Users\runneradmin\.m2\repository  # Adjust this path according to your runner setup
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-maven-
-
-    # Display Java version
-    - name: Display Java version
+    - name: Copy Folder to Remote Server
+      shell: pwsh
       run: |
-        echo %JAVA_HOME%
-        java -version
-      shell: cmd
+        $sourcePath = "C:\Windows\system32\actions-runner"
+        $destinationPath = "C:\Windows\"
+        $serverName = "13.235.245.155"
+        $username = "Administrator"
+        $sshKeyPath = "${{ secrets.SSH_KEY_PATH }}"
 
-    # Display Maven version
-    - name: Display Maven version
-      run: |
-        echo %MAVEN_HOME%
-        mvn -version
-      shell: cmd
-
-    # Build with Maven
-    - name: Build with Maven
-      run: mvn clean install
-      shell: cmd
+        scp -i $env:USERPROFILE\.ssh\id_rsa -r $sourcePath $username@$serverName:$destinationPath
