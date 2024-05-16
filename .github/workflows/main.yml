@@ -14,7 +14,9 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up SSH key
+      shell: pwsh
       run: |
+        $ErrorActionPreference = 'Stop'
         $key = "${{ secrets.SSH_PRIVATE_KEY }}"
         $keyPath = "$env:USERPROFILE\.ssh\id_rsa"
         if (-not (Test-Path "$env:USERPROFILE\.ssh")) {
@@ -22,7 +24,7 @@ jobs:
         }
         $key | Out-File -FilePath $keyPath -Encoding ascii
         icacls $keyPath /inheritance:r /grant:r $env:USERNAME:F
-        Start-Process "ssh-add" $keyPath -NoNewWindow -Wait
+        Start-Process "powershell" -ArgumentList "ssh-add $keyPath" -NoNewWindow -Wait
 
     - name: Copy Folder to Remote Server
       shell: pwsh
@@ -31,6 +33,4 @@ jobs:
         $destinationPath = "C:\Windows\"
         $serverName = "13.235.245.155"
         $username = "Administrator"
-        $sshKeyPath = "${{ secrets.SSH_KEY_PATH }}"
-
         scp -i $env:USERPROFILE\.ssh\id_rsa -r $sourcePath $username@$serverName:$destinationPath
