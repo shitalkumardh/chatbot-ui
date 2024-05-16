@@ -1,22 +1,32 @@
-name: Java Maven Build
+name: Java Build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
+
   build:
-    runs-on: self-hosted  # Specify that this job runs on a self-hosted runner
+    runs-on: self-hosted
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-    # Build with Maven
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '8'
+        distribution: 'adopt'
+        
+    - name: Set up Maven
+      uses: stCarolas/setup-maven@v4.5
+      with:
+        maven-version: 3.8.6
+        
     - name: Build with Maven
-      run: cd C:
-
-    # # Display Java version
-    # - name: Display Java version
-    #   run: java -version
-
-    # # Display Maven version
-    # - name: Display Maven version
-    #   # run: mvn -version
+      run: |
+        echo "Setting Maven environment variables"
+        echo "${{ env.JAVA_HOME_8_X64 }}"
+        echo "${{ env.M2_HOME }}
