@@ -32,5 +32,4 @@ jobs:
         $serverName = "13.235.245.155"
         $username = "Administrator"
         $sshKeyPath = "${{ secrets.SSH_KEY_PATH }}"
-
         scp -i $env:USERPROFILE\.ssh\id_rsa -r $sourcePath $username@$serverName:$destinationPath
